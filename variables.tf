@@ -21,7 +21,7 @@ variable "domain_prefix" {
 variable "db_username" {
   description = "Master username for RDS database"
   type        = string
-  default     = "admin"
+  default     = "zapsadmin"
 }
 
 variable "db_password" {

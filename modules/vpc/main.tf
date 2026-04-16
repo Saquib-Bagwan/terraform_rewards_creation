@@ -8,14 +8,6 @@ resource "aws_vpc" "this" {
   }
 }
 
-resource "aws_internet_gateway" "this" {
-  vpc_id = aws_vpc.this.id
-
-  tags = {
-    Name = "zaps-igw"
-  }
-}
-
 # Public Subnets
 resource "aws_subnet" "public" {
   count             = length(var.public_subnets)
@@ -46,11 +38,6 @@ resource "aws_subnet" "private" {
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.this.id
-  }
-
   tags = {
     Name = "zaps-public-rt"
   }
@@ -78,30 +65,3 @@ resource "aws_route_table_association" "private" {
   route_table_id = var.enable_nat_gateway ? aws_route_table.private[0].id : aws_route_table.public.id
 }
 
-# NAT Gateway (if enabled)
-resource "aws_eip" "nat" {
-  count = var.enable_nat_gateway ? 1 : 0
-  domain = "vpc"
-
-  tags = {
-    Name = "zaps-nat-eip"
-  }
-}
-
-resource "aws_nat_gateway" "this" {
-  count         = var.enable_nat_gateway ? 1 : 0
-  allocation_id = aws_eip.nat[0].id
-  subnet_id     = aws_subnet.public[0].id
-
-  tags = {
-    Name = "zaps-nat-gw"
-  }
-}
-
-# Add NAT route to private RT if enabled
-resource "aws_route" "private_nat" {
-  count                  = var.enable_nat_gateway ? 1 : 0
-  route_table_id         = aws_route_table.private[0].id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this[0].id
-}

@@ -1,16 +1,16 @@
-VPC Module
+#VPC Module
 module "vpc" {
   source = "./modules/vpc"
 }
 
 # Cognito Module (needed for Lambda)
-module "cognito" {
-  source = "./modules/cognito"
+# module "cognito" {
+#   source = "./modules/cognito"
 
-  user_pool_name = var.user_pool_name
-  client_name    = var.client_name
-  domain_prefix  = var.domain_prefix
-}
+#   user_pool_name = var.user_pool_name
+#   client_name    = var.client_name
+#   domain_prefix  = var.domain_prefix
+# }
 
 # API Gateway Module
 # module "api_gateway" {
@@ -19,19 +19,19 @@ module "cognito" {
 # }
 
 # Lambda Module (only this will be applied)
-module "lambda" {
-  source = "./modules/lambda"
+# module "lambda" {
+#   source = "./modules/lambda"
 
-  lambdas = var.lambdas
+#   lambdas = var.lambdas
 
-  user_pool_id  = module.cognito.user_pool_id
-  user_pool_arn = module.cognito.user_pool_arn
-}
+#   user_pool_id  = module.cognito.user_pool_id
+#   user_pool_arn = module.cognito.user_pool_arn
+# }
 
 #S3 Bucket Module
-module "s3" {
-  source = "./modules/s3_bucket"
-}
+# module "s3" {
+#   source = "./modules/s3_bucket"
+# }
 
 # IAM Module for EBS roles
 # module "iam_ebs_service" {
@@ -54,16 +54,16 @@ module "s3" {
 # }
 
 # Security Group for RDS (Database Access)
-# module "sg_rds" {
-#   source = "./modules/security-group"
+module "sg_rds" {
+  source = "./modules/security-group"
 
-#   sg_name                  = "rds-sg"
-#   description              = "Security group for RDS database"
-#   vpc_id                   = module.vpc.vpc_id
-#   allow_db_port            = true
-#   db_engine                = var.db_engine
-#   source_security_group_id = module.sg_ebs.id
-# }
+  sg_name                  = "rds-sg"
+  description              = "Security group for RDS database"
+  vpc_id                   = module.vpc.vpc_id
+  allow_db_port            = true
+  db_engine                = var.db_engine
+  # source_security_group_id = module.sg_ebs.id
+}
 
 # Elastic Beanstalk Module
 # module "ebs" {
@@ -90,20 +90,20 @@ module "s3" {
 # }
 
 # RDS Module
-# module "rds" {
-#   source = "./modules/rds"
+module "rds" {
+  source = "./modules/rds"
 
-#   db_name             = "zapsdb"
-#   username            = var.db_username
-#   password            = var.db_password
-#   instance_class      = "db.t3.micro"
-#   engine              = var.db_engine
+  db_name             = "zapsdb"
+  username            = var.db_username
+  password            = var.db_password
+  instance_class      = "db.t3.micro"
+  engine              = var.db_engine
 
-#   engine_version = ""  
+  engine_version = ""  
 
-#   security_group_ids  = [module.sg_rds.id]
-#   publicly_accessible = false
+  security_group_ids  = [module.sg_rds.id]
+  publicly_accessible = false
 
-#   subnet_ids = module.vpc.private_subnet_ids
-# }
+  subnet_ids = module.vpc.private_subnet_ids
+}
 
