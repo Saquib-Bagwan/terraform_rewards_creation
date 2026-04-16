@@ -28,7 +28,7 @@ module "lambda" {
   user_pool_arn = module.cognito.user_pool_arn
 }
 
-S3 Bucket Module
+#S3 Bucket Module
 module "s3" {
   source = "./modules/s3_bucket"
 }
