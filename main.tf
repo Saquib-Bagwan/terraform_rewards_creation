@@ -1,7 +1,7 @@
-# VPC Module
-# module "vpc" {
-#   source = "./modules/vpc"
-# }
+VPC Module
+module "vpc" {
+  source = "./modules/vpc"
+}
 
 # Cognito Module (needed for Lambda)
 module "cognito" {
@@ -28,10 +28,10 @@ module "lambda" {
   user_pool_arn = module.cognito.user_pool_arn
 }
 
-# S3 Bucket Module
-# module "s3" {
-#   source = "./modules/s3_bucket"
-# }
+S3 Bucket Module
+module "s3" {
+  source = "./modules/s3_bucket"
+}
 
 # IAM Module for EBS roles
 # module "iam_ebs_service" {
