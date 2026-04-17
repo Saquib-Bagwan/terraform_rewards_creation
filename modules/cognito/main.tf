@@ -1,6 +1,4 @@
-########################################
 # Cognito User Pool
-########################################
 resource "aws_cognito_user_pool" "this" {
   name = "zaps-user-pool"
 
@@ -10,9 +8,7 @@ resource "aws_cognito_user_pool" "this" {
   # Only email verification
   auto_verified_attributes = ["email"]
 
-  ########################################
   # Email attribute
-  ########################################
   schema {
     name                = "email"
     attribute_data_type = "String"
@@ -20,9 +16,7 @@ resource "aws_cognito_user_pool" "this" {
     mutable             = true
   }
 
-  ########################################
   # Phone number (optional - NOT required)
-  ########################################
   schema {
     name                = "phone_number"
     attribute_data_type = "String"
@@ -30,9 +24,7 @@ resource "aws_cognito_user_pool" "this" {
     mutable             = true
   }
 
-  ########################################
   # Custom Attributes for User Type
-  ########################################
   schema {
     name                = "user_type"
     attribute_data_type = "String"
@@ -41,9 +33,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Custom Attributes for Store Name
-  ########################################
   schema {
     name                = "storeName"
     attribute_data_type = "String"
@@ -52,9 +42,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Custom Attributes for Store ID
-  ########################################
   schema {
     name                = "storeId"
     attribute_data_type = "String"
@@ -63,9 +51,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Custom Attributes for User Type ID
-  ########################################
   schema {
     name                = "userTypeId"
     attribute_data_type = "String"
@@ -74,9 +60,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Custom Attributes for User ID
-  ########################################
   schema {
     name                = "userId"
     attribute_data_type = "String"
@@ -85,9 +69,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Custom Attributes for Correlation ID
-  ########################################
   schema {
     name                = "correlationId"
     attribute_data_type = "String"
@@ -96,9 +78,7 @@ resource "aws_cognito_user_pool" "this" {
     developer_only_attribute = false
   }
 
-  ########################################
   # Password policy
-  ########################################
   password_policy {
     minimum_length    = 8
     require_uppercase = true
@@ -106,9 +86,7 @@ resource "aws_cognito_user_pool" "this" {
     require_numbers   = true
   }
 
-  ########################################
   # Account recovery (Best Practice)
-  ########################################
   account_recovery_setting {
     recovery_mechanism {
       name     = "verified_email"
@@ -125,9 +103,7 @@ resource "aws_cognito_user_pool" "this" {
   }
 }
 
-########################################
 # User Pool Client
-########################################
 resource "aws_cognito_user_pool_client" "this" {
   name         = "zaps-client"
   user_pool_id = aws_cognito_user_pool.this.id
@@ -141,17 +117,13 @@ resource "aws_cognito_user_pool_client" "this" {
   generate_secret = false
 }
 
-########################################
 # Cognito Domain (Hosted UI)
-########################################
 resource "aws_cognito_user_pool_domain" "this" {
   domain       = "zaps-auth-domain-${random_id.suffix.hex}"
   user_pool_id = aws_cognito_user_pool.this.id
 }
 
-########################################
 # Random suffix (to avoid domain conflict)
-########################################
 resource "random_id" "suffix" {
   byte_length = 4
 }

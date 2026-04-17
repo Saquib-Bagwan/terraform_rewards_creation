@@ -1,6 +1,4 @@
-########################################
 # IAM Assume Role
-########################################
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
@@ -14,9 +12,7 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
-########################################
 # Lambda IAM Role
-########################################
 resource "aws_iam_role" "lambda_role" {
   for_each = var.lambdas
 
@@ -24,9 +20,7 @@ resource "aws_iam_role" "lambda_role" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-########################################
 # Attach Basic Execution Role (CloudWatch Logs)
-########################################
 resource "aws_iam_role_policy_attachment" "basic_execution" {
   for_each = var.lambdas
 
@@ -34,9 +28,7 @@ resource "aws_iam_role_policy_attachment" "basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-########################################
 # Cognito Access Policy (Scoped)
-########################################
 resource "aws_iam_role_policy" "cognito_access" {
   for_each = var.lambdas
 
@@ -60,9 +52,7 @@ resource "aws_iam_role_policy" "cognito_access" {
   })
 }
 
-########################################
 # SES Access Policy (for email sending)
-########################################
 resource "aws_iam_role_policy" "ses_access" {
   for_each = var.lambdas
 
@@ -91,15 +81,11 @@ resource "aws_lambda_function" "this" {
   handler       = each.value.handler
   runtime       = each.value.runtime
 
-  ########################################
   # FILE (Dummy / Real)
-  ########################################
   filename         = each.value.filename
   source_code_hash = filebase64sha256(each.value.filename)
 
-  ########################################
   # Environment Variables
-  ########################################
   environment {
     variables = {
       ENVIRONMENT  = "qa"
@@ -107,14 +93,10 @@ resource "aws_lambda_function" "this" {
     }
   }
 
-  ########################################
   # Timeout (important for API calls)
-  ########################################
   timeout = 10
 
-  ########################################
   # Tags
-  ########################################
   tags = {
     Project = "zaps-reward"
   }
