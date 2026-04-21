@@ -1,87 +1,162 @@
-#VPC Module
+# =============================================================================
+# Root Module — Composes all child modules for Rewards System
+# =============================================================================
+
+# =============================================================================
+# VPC Module (no dependencies)
+# =============================================================================
+
 module "vpc" {
   source = "./modules/vpc"
+
+  vpc_cidr           = var.vpc_cidr
+  availability_zones = var.availability_zones
+  public_subnets     = var.public_subnets
+  private_subnets    = var.private_subnets
 }
 
-# Cognito Module (needed for Lambda)
-# module "cognito" {
-#   source = "./modules/cognito"
-
-#   user_pool_name = var.user_pool_name
-#   client_name    = var.client_name
-#   domain_prefix  = var.domain_prefix
-# }
-
-# API Gateway Module
-# module "api_gateway" {
-#   source = "./modules/api-gateway"
-#   api_gateways = var.api_gateways
-# }
-
-# Lambda Module (only this will be applied)
-# module "lambda" {
-#   source = "./modules/lambda"
-
-#   lambdas = var.lambdas
-
-#   user_pool_id  = module.cognito.user_pool_id
-#   user_pool_arn = module.cognito.user_pool_arn
-# }
-
-#S3 Bucket Module
-# module "s3" {
-#   source = "./modules/s3_bucket"
-# }
-
-# IAM Module for EBS roles
-# module "iam_ebs_service" {
-#   source = "./modules/iam"
-
-#   role_name = "ebs-service-role"
-#   service   = "elasticbeanstalk.amazonaws.com"
-# }
+# =============================================================================
+# Security Groups Module (depends on: vpc)
+# =============================================================================
 
 # Security Group for EBS (Web Traffic)
-# module "sg_ebs" {
-#   source = "./modules/security-group"
+module "sg_ebs" {
+  source = "./modules/security-group"
 
-#   sg_name     = "ebs-sg"
-#   description = "Security group for Elastic Beanstalk environment"
-#   vpc_id      = module.vpc.vpc_id
-#   allow_http  = true
-#   allow_https = true
-#   allow_ssh   = true
-# }
+  sg_name     = "${var.app_name}-ebs-sg"
+  description = "Security group for Elastic Beanstalk environment"
+  vpc_id      = module.vpc.vpc_id
+  allow_http  = true
+  allow_https = true
+  allow_ssh   = true
+  ssh_ingress_cidr = var.ssh_ingress_cidr
+}
 
 # Security Group for RDS (Database Access)
 module "sg_rds" {
   source = "./modules/security-group"
 
-  sg_name                  = "rds-sg"
+  sg_name                  = "${var.app_name}-rds-sg"
   description              = "Security group for RDS database"
   vpc_id                   = module.vpc.vpc_id
   allow_db_port            = true
   db_engine                = var.db_engine
-  # source_security_group_id = module.sg_ebs.id
+  source_security_group_id = module.sg_ebs.id
 }
 
-# Elastic Beanstalk Module
-# module "ebs" {
-#   source = "./modules/ebs"
+# =============================================================================
+# IAM Module (depends on: S3 bucket ARN pattern, CloudWatch log group ARNs)
+# =============================================================================
 
-#   app_name            = "zaps-app"
-#   env_name            = "zaps-env"
-#   app_version         = "v1"
-#   s3_bucket           = module.s3.bucket_name
-#   s3_key              = "app/app.jar"
-#   app_path            = "app/app.jar"
-#   instance_type       = "t2.micro"
-#   security_group_id   = module.sg_ebs.id
+module "iam_ebs_service" {
+  source = "./modules/iam"
 
-#   solution_stack_name = "64bit Amazon Linux 2 v3.5.6 running Corretto 17"
-# }
+  role_name = "${var.app_name}-ebs-service-role"
+  service   = "elasticbeanstalk.amazonaws.com"
+}
 
-# SES Module
+# =============================================================================
+# S3 Bucket Module (no dependencies)
+# =============================================================================
+
+module "s3" {
+  source = "./modules/s3_bucket"
+}
+
+# =============================================================================
+# Cognito Module (no dependencies)
+# =============================================================================
+
+module "cognito" {
+  source = "./modules/cognito"
+
+  user_pool_name = var.user_pool_name
+  client_name    = var.client_name
+  domain_prefix  = var.domain_prefix
+}
+
+# =============================================================================
+# API Gateway Module (depends on: cognito, lambda)
+# =============================================================================
+
+module "api_gateway" {
+  source = "./modules/api-gateway"
+
+  api_gateways = var.api_gateways
+}
+
+# =============================================================================
+# Lambda Module (depends on: cognito, iam)
+# =============================================================================
+
+module "lambda" {
+  source = "./modules/lambda"
+
+  lambdas       = var.lambdas
+  user_pool_id  = module.cognito.user_pool_id
+  user_pool_arn = module.cognito.user_pool_arn
+}
+
+# =============================================================================
+# Elastic Beanstalk Module (depends on: vpc, security-groups, iam, s3)
+# =============================================================================
+
+module "ebs" {
+  source = "./modules/ebs"
+
+  app_name = var.app_name
+
+  # REQUIRED VARIABLES (add these)
+  ebs_kms_key_arn       = var.ebs_kms_key_arn
+  instance_profile_name = var.instance_profile_name
+  vpc_id                = var.vpc_id
+  public_subnet_ids     = var.public_subnet_ids
+  app_subnet_ids        = var.app_subnet_ids
+
+  security_group_id = var.security_group_id
+
+  instance_type = var.instance_type
+  min_instances = var.min_instances
+  max_instances = var.max_instances
+
+  scale_up_threshold   = var.scale_up_threshold
+  scale_down_threshold = var.scale_down_threshold
+
+  health_check_url = var.health_check_url
+
+  solution_stack_name = var.solution_stack_name
+
+  tags = var.tags
+  ebs_environments = var.ebs_environments
+  log_retention_days = var.log_retention_days
+}
+
+# =============================================================================
+# RDS Module (depends on: vpc, security-groups)
+# =============================================================================
+
+module "rds" {
+  source = "./modules/rds"
+
+  db_name             = replace(var.app_name, "-", "")
+  instance_class      = var.db_instance_class
+  allocated_storage   = var.db_allocated_storage
+  username            = var.db_username
+  password            = var.db_password
+  engine              = var.db_engine
+  engine_version      = ""
+  backup_window       = var.backup_window
+  maintenance_window  = var.maintenance_window
+  security_group_ids  = [module.sg_rds.id]
+  publicly_accessible = false
+  subnet_ids          = module.vpc.private_subnet_ids
+  storage_type        = var.storage_type
+}
+
+# =============================================================================
+# SES Module (no dependencies)
+# =============================================================================
+
 # module "ses" {
 #   source = "./modules/ses"
 
@@ -89,21 +164,69 @@ module "sg_rds" {
 #   domain = var.ses_domain
 # }
 
-# RDS Module
-module "rds" {
-  source = "./modules/rds"
+# =============================================================================
+# Optional Modules (Commented Out)
+# =============================================================================
 
-  db_name             = "zapsdb"
-  username            = var.db_username
-  password            = var.db_password
-  instance_class      = "db.t3.micro"
-  engine              = var.db_engine
+# ALB Module - Uncomment if needed for load balancing
+# module "alb" {
+#   source = "./modules/alb"
+#
+#   alb_name               = "${var.app_name}-alb"
+#   subnet_ids             = module.vpc.public_subnet_ids
+#   security_group_ids     = [module.sg_ebs.id]
+#   target_group_name      = "${var.app_name}-tg"
+#   target_group_port      = 80
+#   target_group_protocol  = "HTTP"
+#   vpc_id                 = module.vpc.vpc_id
+#   health_check_path      = var.health_check_url
+#   listener_port          = 80
+#   listener_protocol      = "HTTP"
+#   tags                   = var.tags
+# }
 
-  engine_version = ""  
+# EIP Module - Uncomment if needed for static IPs
+# module "eip" {
+#   source = "./modules/eip"
+#
+#   create_eip                 = true
+#   eip_count                  = 2
+#   eip_name                   = "${var.app_name}-eip"
+#   associate_with_nat_gateway = true
+#   nat_gateway_count          = 2
+#   tags                       = var.tags
+# }
 
-  security_group_ids  = [module.sg_rds.id]
-  publicly_accessible = false
+# ACM Module - Uncomment if needed for SSL certificates
+# module "acm" {
+#   source = "./modules/acm"
+#
+#   domain_name                   = "example.com"
+#   validation_method             = "DNS"
+#   subject_alternative_names     = ["www.example.com"]
+#   route53_zone_id               = try(module.route53.zone_id, "")
+#   tags                          = var.tags
+# }
 
-  subnet_ids = module.vpc.private_subnet_ids
-}
+# Route 53 Module - Uncomment if needed for DNS management
+# module "route53" {
+#   source = "./modules/route53"
+#
+#   zone_name      = "example.com"
+#   a_records = {
+#     alb = {
+#       name    = "alb"
+#       ttl     = 300
+#       records = [try(module.alb.alb_dns_name, "")]
+#     }
+#   }
+#   cname_records = {
+#     www = {
+#       name    = "www"
+#       ttl     = 300
+#       records = ["example.com"]
+#     }
+#   }
+#   tags = var.tags
+# }
 

@@ -74,3 +74,9 @@ variable "description" {
   type        = string
   default     = "Managed by Terraform"
 }
+
+variable "ssh_ingress_cidr" {
+  description = "SSH admin CIDR to restrict SSH access (e.g. 1.2.3.4/32). If empty, defaults to 0.0.0.0/0"
+  type        = string
+  default     = ""
+}

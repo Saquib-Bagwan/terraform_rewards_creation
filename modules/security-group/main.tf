@@ -34,8 +34,8 @@ resource "aws_security_group" "this" {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-      description = "Allow SSH from internet (restrict in production)"
+      cidr_blocks = var.ssh_ingress_cidr != "" ? [var.ssh_ingress_cidr] : ["0.0.0.0/0"]
+      description = "Allow SSH from internet (restrict in production). Set ssh_ingress_cidr to restrict."
     }
   }
 

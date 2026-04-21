@@ -63,3 +63,25 @@ resource "aws_lambda_permission" "this" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.this[each.value.api_key].execution_arn}/*/*"
 }
+
+# Optional: create custom domain names and mappings when an api gateway entry includes
+# `domain_name` and `certificate_arn` keys.
+resource "aws_apigatewayv2_domain_name" "this" {
+  for_each = { for k, v in var.api_gateways : k => v if try(v.domain_name, "") != "" }
+
+  domain_name = each.value.domain_name
+
+  domain_name_configuration {
+    certificate_arn = each.value.certificate_arn
+    endpoint_type    = "REGIONAL"
+    security_policy  = "TLS_1_2"
+  }
+}
+
+resource "aws_apigatewayv2_api_mapping" "this" {
+  for_each = aws_apigatewayv2_domain_name.this
+
+  api_id      = aws_apigatewayv2_api.this[each.key].id
+  domain_name = each.value.domain_name
+  stage       = aws_apigatewayv2_stage.this[each.key].name
+}
