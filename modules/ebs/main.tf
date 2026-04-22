@@ -27,7 +27,8 @@ resource "aws_s3_bucket_versioning" "deploy_artifacts" {
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "deploy_artifacts" {
+resource "aws_s3_bucket_server_side_encryption_configuration" "deploy_artifacts_kms" {
+  count  = var.ebs_kms_key_arn != "" ? 1 : 0
   bucket = aws_s3_bucket.deploy_artifacts.id
 
   rule {
@@ -36,6 +37,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "deploy_artifacts"
       kms_master_key_id = var.ebs_kms_key_arn
     }
     bucket_key_enabled = true
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "deploy_artifacts_aes" {
+  count  = var.ebs_kms_key_arn == "" ? 1 : 0
+  bucket = aws_s3_bucket.deploy_artifacts.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
   }
 }
 

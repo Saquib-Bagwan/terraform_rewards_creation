@@ -19,30 +19,31 @@ module "vpc" {
 # Security Groups Module (depends on: vpc)
 # =============================================================================
 
+# Temporarily commented out security modules for testing (WAF/KMS/NAT/Internet-related parts)
 # Security Group for EBS (Web Traffic)
-module "sg_ebs" {
-  source = "./modules/security-group"
-
-  sg_name     = "${var.app_name}-ebs-sg"
-  description = "Security group for Elastic Beanstalk environment"
-  vpc_id      = module.vpc.vpc_id
-  allow_http  = true
-  allow_https = true
-  allow_ssh   = true
-  ssh_ingress_cidr = var.ssh_ingress_cidr
-}
-
+# module "sg_ebs" {
+#   source = "./modules/security-group"
+#
+#   sg_name     = "${var.app_name}-ebs-sg"
+#   description = "Security group for Elastic Beanstalk environment"
+#   vpc_id      = module.vpc.vpc_id
+#   allow_http  = true
+#   allow_https = true
+#   allow_ssh   = true
+#   ssh_ingress_cidr = var.ssh_ingress_cidr
+# }
+#
 # Security Group for RDS (Database Access)
-module "sg_rds" {
-  source = "./modules/security-group"
-
-  sg_name                  = "${var.app_name}-rds-sg"
-  description              = "Security group for RDS database"
-  vpc_id                   = module.vpc.vpc_id
-  allow_db_port            = true
-  db_engine                = var.db_engine
-  source_security_group_id = module.sg_ebs.id
-}
+# module "sg_rds" {
+#   source = "./modules/security-group"
+#
+#   sg_name                  = "${var.app_name}-rds-sg"
+#   description              = "Security group for RDS database"
+#   vpc_id                   = module.vpc.vpc_id
+#   allow_db_port            = true
+#   db_engine                = var.db_engine
+#   source_security_group_id = module.sg_ebs.id
+# }
 
 # =============================================================================
 # IAM Module (depends on: S3 bucket ARN pattern, CloudWatch log group ARNs)
@@ -76,16 +77,6 @@ module "cognito" {
 }
 
 # =============================================================================
-# API Gateway Module (depends on: cognito, lambda)
-# =============================================================================
-
-module "api_gateway" {
-  source = "./modules/api-gateway"
-
-  api_gateways = var.api_gateways
-}
-
-# =============================================================================
 # Lambda Module (depends on: cognito, iam)
 # =============================================================================
 
@@ -95,6 +86,34 @@ module "lambda" {
   lambdas       = var.lambdas
   user_pool_id  = module.cognito.user_pool_id
   user_pool_arn = module.cognito.user_pool_arn
+}
+
+# =============================================================================
+# API Gateway Module (depends on: cognito, lambda)
+# =============================================================================
+
+module "api_gateway" {
+  source = "./modules/api-gateway"
+
+  api_gateways = {
+    customer = {
+      api_name      = "zapp-customer-api"
+      endpoint_type = "REGIONAL"
+      stage_name    = "dev"
+
+    routes = [
+      {
+        route_key        = "POST /customer"
+        integration_type = "LAMBDA"
+        lambda_arn       = try(module.lambda.lambda_arns["create_user"], "")
+      }
+    ]
+
+      tags = {
+        Environment = "dev"
+      }
+    }
+  }
 }
 
 # =============================================================================
@@ -126,8 +145,8 @@ module "ebs" {
 
   solution_stack_name = var.solution_stack_name
 
-  tags = var.tags
-  ebs_environments = var.ebs_environments
+  tags               = var.tags
+  ebs_environments   = var.ebs_environments
   log_retention_days = var.log_retention_days
 }
 
@@ -138,16 +157,17 @@ module "ebs" {
 module "rds" {
   source = "./modules/rds"
 
-  db_name             = replace(var.app_name, "-", "")
-  instance_class      = var.db_instance_class
-  allocated_storage   = var.db_allocated_storage
-  username            = var.db_username
-  password            = var.db_password
-  engine              = var.db_engine
-  engine_version      = ""
-  backup_window       = var.backup_window
-  maintenance_window  = var.maintenance_window
-  security_group_ids  = [module.sg_rds.id]
+  db_name            = replace(var.app_name, "-", "")
+  instance_class     = var.db_instance_class
+  allocated_storage  = var.db_allocated_storage
+  username           = var.db_username
+  password           = var.db_password
+  engine             = var.db_engine
+  engine_version     = ""
+  backup_window      = var.backup_window
+  maintenance_window = var.maintenance_window
+  # security groups commented out for testing
+  security_group_ids  = []
   publicly_accessible = false
   subnet_ids          = module.vpc.private_subnet_ids
   storage_type        = var.storage_type
@@ -157,24 +177,26 @@ module "rds" {
 # SES Module (no dependencies)
 # =============================================================================
 
-# module "ses" {
-#   source = "./modules/ses"
-
-#   email  = var.ses_email
-#   domain = var.ses_domain
-# }
+## SES module temporarily removed for testing (enable when `ses_email`/`ses_domain` variables are present)
+## module "ses" {
+##   source = "./modules/ses"
+##
+##   email  = var.ses_email
+##   domain = var.ses_domain
+## }
 
 # =============================================================================
 # Optional Modules (Commented Out)
 # =============================================================================
 
-# ALB Module - Uncomment if needed for load balancing
+# ALB Module temporarily disabled for testing
 # module "alb" {
 #   source = "./modules/alb"
 #
 #   alb_name               = "${var.app_name}-alb"
 #   subnet_ids             = module.vpc.public_subnet_ids
-#   security_group_ids     = [module.sg_ebs.id]
+#   # security groups commented out for testing
+#   security_group_ids     = []
 #   target_group_name      = "${var.app_name}-tg"
 #   target_group_port      = 80
 #   target_group_protocol  = "HTTP"
@@ -182,9 +204,10 @@ module "rds" {
 #   health_check_path      = var.health_check_url
 #   listener_port          = 80
 #   listener_protocol      = "HTTP"
-#   tags                   = var.tags
+#   # `tags` removed: not expected by this module (was causing validate error)
 # }
 
+# Temporarily commented out EIP/ACM/Route53 modules for testing (NAT/Internet/WAF/KMS changes)
 # EIP Module - Uncomment if needed for static IPs
 # module "eip" {
 #   source = "./modules/eip"
@@ -196,7 +219,7 @@ module "rds" {
 #   nat_gateway_count          = 2
 #   tags                       = var.tags
 # }
-
+#
 # ACM Module - Uncomment if needed for SSL certificates
 # module "acm" {
 #   source = "./modules/acm"
@@ -207,7 +230,7 @@ module "rds" {
 #   route53_zone_id               = try(module.route53.zone_id, "")
 #   tags                          = var.tags
 # }
-
+#
 # Route 53 Module - Uncomment if needed for DNS management
 # module "route53" {
 #   source = "./modules/route53"

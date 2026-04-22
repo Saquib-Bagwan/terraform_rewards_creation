@@ -41,17 +41,16 @@ ebs_app_source       = "app/app.jar"
 # Database — RDS Configuration
 # =============================================================================
 
-db_instance_class    = "db.m7g.large"
+db_instance_class = "db.m7g.large"
 # RDS
 db_allocated_storage = 500
 db_max_storage       = 500
 storage_type         = "gp3"
-db_instance_class    = "db.m7g.large"
 db_engine            = "postgres"
 db_username          = "zapsadmin"
 # NOTE: db_password is NOT stored here. Pass via TF_VAR_db_password
 #       environment variable or AWS Secrets Manager.
-# db_password = "ChangeMe123!"
+db_password = "ChangeMe123!"
 
 backup_window       = "03:00-04:00"
 maintenance_window  = "Sun:04:00-Sun:05:00"
@@ -63,7 +62,7 @@ create_read_replica = false
 
 acm_certificate_arn = ""
 waf_rate_limit      = 2000
-ssh_ingress_cidr    = ""  # set to your admin IP CIDR (e.g. 1.2.3.4/32) to restrict SSH
+ssh_ingress_cidr    = "" # set to your admin IP CIDR (e.g. 1.2.3.4/32) to restrict SSH
 
 # =============================================================================
 # Cognito Configuration
@@ -79,7 +78,12 @@ domain_prefix  = "zaps-auth"
 
 api_gateways = {
   api1 = {
-    api_name = "user-api"
+    api_name        = "user-api"
+    protocol        = "HTTP"
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+    stage_name      = "prod"
+    tags            = {}
     routes = [
       {
         route_key        = "GET /users"
@@ -90,7 +94,12 @@ api_gateways = {
   }
 
   api2 = {
-    api_name = "external-api"
+    api_name        = "external-api"
+    protocol        = "HTTP"
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+    stage_name      = "prod"
+    tags            = {}
     routes = [
       {
         route_key        = "GET /posts"
@@ -144,29 +153,28 @@ ebs_environments = {
     health_check_url    = "/actuator/health"
     solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
   }
+  # admin = {
+  #   instance_type       = "t4g.medium"
+  #   min_instances       = 1
+  #   max_instances       = 2
+  #   health_check_url    = "/actuator/health"
+  #   solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
+  # }
 
-  admin = {
-    instance_type       = "t4g.medium"
-    min_instances       = 1
-    max_instances       = 2
-    health_check_url    = "/actuator/health"
-    solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
-  }
+  # merchant = {
+  #   instance_type       = "t4g.medium"
+  #   min_instances       = 1
+  #   max_instances       = 2
+  #   health_check_url    = "/actuator/health"
+  #   solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
+  # }
 
-  merchant = {
-    instance_type       = "t4g.medium"
-    min_instances       = 1
-    max_instances       = 2
-    health_check_url    = "/actuator/health"
-    solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
-  }
-
-  client = {
-    instance_type       = "t4g.medium"
-    min_instances       = 1
-    max_instances       = 2
-    health_check_url    = "/actuator/health"
-    solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
-  }
+  # client = {
+  #   instance_type       = "t4g.medium"
+  #   min_instances       = 1
+  #   max_instances       = 2
+  #   health_check_url    = "/actuator/health"
+  #   solution_stack_name = "64bit Amazon Linux 2023 v4.4.4 running Corretto 25"
+  # }
 }
 

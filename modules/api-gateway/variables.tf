@@ -1,5 +1,21 @@
-variable "api_gateways" {
-  description = "Map of API gateways and their routes. Each value may include optional keys: domain_name and certificate_arn for custom domain mapping."
-  type    = map(any)
-  default = {}
-}
+# #############################################
+# # VARIABLES
+# #############################################
+
+# variable "api_gateways" {
+#   type = map(object({
+#     api_name      = string
+#     description   = optional(string)
+#     endpoint_type = optional(string)
+#     stage_name    = optional(string)
+
+#     routes = list(object({
+#       route_key        = string
+#       integration_type = string
+#       lambda_arn       = optional(string)
+#       http_url         = optional(string)
+#     }))
+
+#     tags = optional(map(string))
+#   }))
+# }

@@ -28,7 +28,6 @@ resource "aws_s3_bucket_public_access_block" "block" {
   restrict_public_buckets = true
 }
 
-# ✅ NEW (Important)
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.app_bucket.id
 
@@ -39,7 +38,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   }
 }
 
-# ✅ NEW (Important)
 resource "aws_s3_bucket_ownership_controls" "ownership" {
   bucket = aws_s3_bucket.app_bucket.id
 
@@ -48,7 +46,6 @@ resource "aws_s3_bucket_ownership_controls" "ownership" {
   }
 }
 
-# ✅ Optional but good
 resource "aws_s3_bucket_acl" "acl" {
   bucket = aws_s3_bucket.app_bucket.id
   acl    = "private"

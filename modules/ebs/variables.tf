@@ -72,11 +72,13 @@ variable "instance_profile_name" {
 variable "security_group_id" {
   description = "Security group ID to attach to EB instances"
   type        = string
+  default     = ""
 }
 
 variable "ebs_kms_key_arn" {
   description = "ARN of the KMS key used for EBS volume encryption"
   type        = string
+  default     = ""
 }
 
 variable "tags" {

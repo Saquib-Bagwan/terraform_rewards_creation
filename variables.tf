@@ -51,11 +51,11 @@ variable "ssh_ingress_cidr" {
 variable "ebs_environments" {
   description = "Map of Elastic Beanstalk environments to create from the root module. Key is suffix appended to app_name. Values must include instance_type, min_instances, max_instances, health_check_url, solution_stack_name."
   type = map(object({
-    instance_type        = string
-    min_instances        = number
-    max_instances        = number
-    health_check_url     = string
-    solution_stack_name  = string
+    instance_type       = string
+    min_instances       = number
+    max_instances       = number
+    health_check_url    = string
+    solution_stack_name = string
   }))
   default = {}
 }
@@ -289,11 +289,13 @@ variable "private_subnets" {
 variable "ebs_kms_key_arn" {
   description = "KMS Key ARN for EBS volume encryption"
   type        = string
+  default     = ""
 }
 
 variable "instance_profile_name" {
   description = "IAM Instance Profile for EC2 instances in EBS"
   type        = string
+  default     = ""
 }
 
 # -----------------------------------------------------------------------------
